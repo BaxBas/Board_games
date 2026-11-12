@@ -1,57 +1,50 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(AudioSource))]
 public class MusicManager : MonoBehaviour
 {
-
-    // add this script to an empty GameObject
-    // adjust array size (aka your amount of songs) in the inspector and select or drag & drop your songs
-
     public AudioClip[] songs;
+
     AudioSource audioSource;
-    int randomSongIndex;
-    int amountOfSongs;
     List<int> playedSongs = new List<int>();
-    int songsPlayed = 0;
-    int lastPlayed; // for avoiding playing the same song twice even after list clear
+    int currentIndex = -1;
 
     void Start()
     {
         audioSource = GetComponent<AudioSource>();
-        amountOfSongs = songs.Length;
-        randomSongIndex = (int)Mathf.Round(Random.Range(0, amountOfSongs));
-        playedSongs.Add(randomSongIndex);
-        songsPlayed++;
-        audioSource.clip = songs[randomSongIndex];
-        audioSource.Play();
+        PlayNextSong();
     }
 
     void Update()
     {
         if (!audioSource.isPlaying)
         {
-            if (songsPlayed == amountOfSongs)
-            {
-                lastPlayed = randomSongIndex;
-                playedSongs.Clear();
-                while (randomSongIndex == lastPlayed)
-                {
-                    randomSongIndex = (int)Mathf.Round(Random.Range(0, amountOfSongs));
-                }
-            }
-            else
-            {
-                while (playedSongs.Contains(randomSongIndex))
-                {
-                    randomSongIndex = (int)Mathf.Round(Random.Range(0, amountOfSongs));
-                }
-            }
-            playedSongs.Add(randomSongIndex);
-            songsPlayed++;
-            audioSource.clip = songs[randomSongIndex];
-            audioSource.Play();
+            PlayNextSong();
         }
+    }
+
+    public void PlayNextSong()
+    {
+        if (songs.Length == 0) return;
+
+        // Everything has been played, so start a new cycle
+        if (playedSongs.Count >= songs.Length)
+        {
+            playedSongs.Clear();
+        }
+
+        int next;
+        do
+        {
+            next = Random.Range(0, songs.Length);
+        }
+        // skip songs already played this cycle, and never repeat the current song back to back
+        while (playedSongs.Contains(next) || (songs.Length > 1 && next == currentIndex));
+
+        currentIndex = next;
+        playedSongs.Add(next);
+        audioSource.clip = songs[next];
+        audioSource.Play();
     }
 }
